@@ -1,1 +1,3 @@
-# taichi-surface_reconstruction
+# Surface Reconstruction Using Taichi
+
+## To be continued
