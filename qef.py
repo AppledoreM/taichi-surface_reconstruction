@@ -1,8 +1,5 @@
-
 import taichi as ti
 import time
-
-ti.init(arch=ti.cuda, dynamic_index = True)
 
 @ti.func
 def sign(x: ti.template()):
@@ -44,7 +41,7 @@ def householder_decomp(M: ti.template()):
         v = ti.types.vector(j + u.n, ti.f32)(0)
         for k in ti.static(range(u.n)):
             v[k + j] = u[k]
-        Hk -= (1.0 / tau) * (v @ v.transpose())
+        Hk -= (1.0 / tau) * (v.outer_product(v))
         R = Hk @ R
         Q = Q @ Hk 
 

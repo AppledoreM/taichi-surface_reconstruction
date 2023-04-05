@@ -1,4 +1,4 @@
-import os
+
 import numpy as np
 import taichi as ti
 import open3d as o3d
@@ -39,7 +39,8 @@ class _SRBuiltInData:
                 [0, 1, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
                 [1, 8, 3, 9, 8, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
                 [1, 2, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
-                [0, 8, 3, 1, 2, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], [9, 2, 10, 0, 2, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+                [0, 8, 3, 1, 2, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+                [9, 2, 10, 0, 2, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
                 [2, 8, 3, 2, 10, 8, 10, 9, 8, -1, -1, -1, -1, -1, -1, -1],
                 [3, 11, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
                 [0, 11, 2, 8, 11, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
@@ -52,7 +53,8 @@ class _SRBuiltInData:
                 [4, 7, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
                 [4, 3, 0, 7, 3, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
                 [0, 1, 9, 8, 4, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
-                [4, 1, 9, 4, 7, 1, 7, 3, 1, -1, -1, -1, -1, -1, -1, -1], [1, 2, 10, 8, 4, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+                [4, 1, 9, 4, 7, 1, 7, 3, 1, -1, -1, -1, -1, -1, -1, -1],
+                [1, 2, 10, 8, 4, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
                 [3, 4, 7, 3, 0, 4, 1, 2, 10, -1, -1, -1, -1, -1, -1, -1],
                 [9, 2, 10, 9, 0, 2, 8, 4, 7, -1, -1, -1, -1, -1, -1, -1],
                 [2, 10, 9, 2, 9, 7, 2, 7, 3, 7, 9, 4, -1, -1, -1, -1],
@@ -290,6 +292,7 @@ class _SRBuiltInData:
                 [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
             ]
         )
+
         edge_table_data = np.array(
             [
                 0x0, 0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c,
@@ -349,19 +352,17 @@ class _SRVoxel:
         if level_dimensions is None:
             # Use default levels to initiate marching cube grid levels
             self.level_dimensions = [
-                ti.Vector([3, 3, 3]),
-                ti.Vector([3, 3, 3]),
-                ti.Vector([3, 3, 3]),
-                ti.Vector([3, 3, 3]),
-                ti.Vector([3, 3, 3]),
-                ti.Vector([3, 3, 3]),
-                ti.Vector([5, 5, 5])
+                ti.Vector([8, 8, 8]),
+                ti.Vector([8, 8, 8]),
+                ti.Vector([8, 8, 8]),
+                ti.Vector([8, 8, 8]),
+                ti.Vector([32, 32, 32])
             ]
         else:
             # Use custom levels to initiate marching cube grid levels
             self.level_dimensions = level_dimensions
 
-        self.max_num_particle_per_voxel = int(np.ceil(pow(voxel_size / particle_radius, 3.0)))
+        self.max_num_particle_per_voxel = 64 #int(np.ceil(pow(voxel_size / particle_radius, 3.0)))
         if self.max_num_particle_per_voxel <= 2:
             self.max_num_particle_per_voxel = 2
 
@@ -527,7 +528,6 @@ class _SRVoxel:
         return ti.atomic_max(self.voxel_visit_hash[x, y, z], w)
 
 
-
     def clear_visit(self):
         self.voxel_visit_hash_levels[0].deactivate_all()
 
@@ -536,14 +536,15 @@ class _SRVoxel:
         self.particle_hash_length_levels[0].deactivate_all()
 
     def deactivate(self):
-        # self.voxel_vertex_value_levels[0].deactivate_all()
-        # self.voxel_visit_hash_levels[0].deactivate_all()
-        # self.voxel_value_levels[0].deactivate_all()
-        # self.particle_hash_levels[0].deactivate_all()
-        # self.particle_hash_length_levels[0].deactivate_all()
-        # self.dc_point_levels[0].deactivate_all()
-        # self.voxel_vertex_velocity_levels[0].deactivate_all()
-        ti.deactivate_all_snodes()
+        self.voxel_vertex_value_levels[0].deactivate_all()
+        self.voxel_visit_hash_levels[0].deactivate_all()
+        self.voxel_value_levels[0].deactivate_all()
+
+        self.dc_point_levels[0].deactivate_all()
+        self.voxel_vertex_velocity_levels[0].deactivate_all()
+
+        self.particle_hash_levels[0].deactivate_all()
+        self.particle_hash_length_levels[0].deactivate_all()
         self.dc_cubes_cnt = 0
 
     @ti.func
@@ -592,6 +593,9 @@ class SRTool:
     def __init__(self, bounding_box_extent, voxel_size=0.01, particle_radius=0.01,
                 record_normals=False, record_velocity = False, max_num_vertices=8000000, max_num_indices=100000000, max_num_particles=9000000,
                  hash_level_dimensions=None):
+
+        self.max_num_particles = max_num_particles
+
         # Initialize some constants
         # These constants came from papers and personal experiments
         self.rho = 1000
@@ -634,6 +638,14 @@ class SRTool:
         self.interpolation_table[10] = ti.Vector([2, 6])
         self.interpolation_table[11] = ti.Vector([3, 7])
 
+        if hash_level_dimensions is None:
+            hash_level_dimensions = level_dimensions = [
+                ti.Vector([8, 8, 8]),
+                ti.Vector([8, 8, 8]),
+                ti.Vector([8, 8, 8]),
+                ti.Vector([8, 8, 8]),
+                ti.Vector([32, 32, 32])
+            ]
 
         # Initialize utility data
 
@@ -647,7 +659,6 @@ class SRTool:
         self.vdb_voxel = ti.Vector.field(4, dtype = ti.f32, shape=2)
         self.record_normals = record_normals
         self.record_velocity = record_velocity
-
 
         if self.record_normals:
             self.mesh_normal = ti.Vector.field(3, dtype=ti.f32, shape=max_num_vertices)
@@ -681,11 +692,19 @@ class SRTool:
             res = 1.0 - ti.pow(norm_dx / r, 3.0)
         return res
 
+    @ti.func
+    def hashIdx(self, i, j, k):
+        return i + self.grid_dim[0] * j + self.grid_dim[0] * self.grid_dim[1] * k
+
+
     #@brief: pre-process data for anisotropic kernel
     @ti.kernel
     def pre_process_data(self, smooth_radius: ti.f32, num_particles: ti.i32, pos: ti.template()):
         smooth_range = ti.ceil(4 * smooth_radius / self.voxel.voxel_size, dtype=ti.i32) + 1
+        print(f"Smooth Range:{smooth_range}")
         smooth_offset = smooth_range // 2
+
+        ti.loop_config(block_dim = 32)
         for i in range(1, num_particles):
             x, y, z = self.voxel.get_voxel_index(pos[i])
             # this is sum w_ij over j
@@ -730,7 +749,7 @@ class SRTool:
                     if w_ij > 0 and particle_id >= 0:
                         num_neighbor_particles += 1
                         dp = pos[particle_id] - x_wi
-                        C_i += w_ij * dp @ dp.transpose()
+                        C_i += w_ij * dp.outer_product(dp)
 
             if total_weight != 0:
                 C_i /= total_weight
@@ -749,27 +768,30 @@ class SRTool:
                 Sigma[1, 1] = self.kn
                 Sigma[2, 2] = self.kn
 
-            self.G[i] = (1 / smooth_radius) * R @ Sigma.inverse() @ RT.transpose()
+            if total_weight != 0.0:
+                self.G[i] = (1 / smooth_radius) * R @ Sigma.inverse() @ RT.transpose()
+            else:
+                self.G[i] = ti.Matrix.identity(ti.f32, 3)
 
-            if isnan(self.G[i].determinant()):
-                num_neighbor_particles = 0
-                for dx, dy, dz in ti.ndrange(smooth_range, smooth_range, smooth_range):
-                    dx -= smooth_offset
-                    dy -= smooth_offset
-                    dz -= smooth_offset
-                    if x + dx < 0 or y + dy < 0 or z + dz < 0:
-                        continue
-                    particle_len = self.voxel.particle_len(x + dx, y + dy, z + dz)
-                    for j in range(particle_len):
-                        particle_id = self.voxel.particle_id(x + dx, y + dy, z + dz, j) - 1
-                        w_ij = self.isoweight(pos[i] - pos[particle_id], 2 * smooth_radius)
-                        if w_ij > 0 and particle_id >= 0:
-                            num_neighbor_particles += 1
-                            dp = pos[particle_id] - x_wi
-                            val = dp @ dp.transpose()
-                            print("weight: {}, dp: {}, {}, {}, current_id {}, particle_id:{}".format(w_ij, dp[0], dp[1], dp[2], i, particle_id))
-                print("neighbors: {}".format(num_neighbor_particles))
-                print(C_i)
+            # if isnan(self.G[i].determinant()):
+            #     num_neighbor_particles = 0
+            #     for dx, dy, dz in ti.ndrange(smooth_range, smooth_range, smooth_range):
+            #         dx -= smooth_offset
+            #         dy -= smooth_offset
+            #         dz -= smooth_offset
+            #         if x + dx < 0 or y + dy < 0 or z + dz < 0:
+            #             continue
+            #         particle_len = self.voxel.particle_len(x + dx, y + dy, z + dz)
+            #         for j in range(particle_len):
+            #             particle_id = self.voxel.particle_id(x + dx, y + dy, z + dz, j) - 1
+            #             w_ij = self.isoweight(pos[i] - pos[particle_id], 2 * smooth_radius)
+            #             if w_ij > 0 and particle_id >= 0:
+            #                 num_neighbor_particles += 1
+            #                 dp = pos[particle_id] - x_wi
+            #                 val = dp.outer_product(dp)
+            #                 print("weight: {}, dp: {}, {}, {}, current_id {}, particle_id:{}".format(w_ij, dp[0], dp[1], dp[2], i, particle_id))
+            #     print("neighbors: {}".format(num_neighbor_particles))
+            #     print(C_i)
 
 
 
@@ -783,7 +805,6 @@ class SRTool:
     #        0                          , otherwise
     #
     # where q = ||r|| / h and sigma3 = 8 / pi h^3
-    #
     # here we see in our anisotropic version, we have
     # sigma = 8 / pi
 
@@ -796,7 +817,6 @@ class SRTool:
             res = 48 / np.pi * G.determinant() * (q * q * q - q * q) + 1
         elif 0.5 < q <= 1:
             res = 16 / np.pi * G.determinant() * (1 - q) * (1 - q) * (1 - q) 
-
 
         return res
 
@@ -820,7 +840,6 @@ class SRTool:
                 nx = x + dx - smooth_offset
                 ny = y + dy - smooth_offset
                 nz = z + dz - smooth_offset
-            
                 for j in range(8):
                     vx, vy, vz = self.voxel.get_voxel_vertex_position(nx, ny, nz, j)
                     vertex_mapped_position = self.voxel.get_voxel_vertex_mapped_position(nx, ny, nz, j)
@@ -828,6 +847,9 @@ class SRTool:
                         continue
 
                     self.voxel.voxel_vertex_value[vx, vy, vz] += self.volume * self.cubic_spline_kernel(self.x_bar[i] - vertex_mapped_position, self.G[i])
+
+        # for I in ti.grouped(self.voxel.voxel_vertex_value):
+        #     print(f"Sampled Voxel Vertex Value: {self.voxel.voxel_vertex_value[I]}")
 
 
 
@@ -947,7 +969,7 @@ class SRTool:
         self.smooth_sdf(iteration=1, radius=1)
 
         print("Performing Dual Contouring")
-        self.dual_contouring_impl(isolevel, 0.01)
+        self.dual_contouring_impl(isolevel)
 
         print("Performing Dual Polygen")
         self.dual_contouring_polygen(isolevel)
@@ -1198,7 +1220,7 @@ class SRTool:
 
 
     @ti.kernel
-    def dual_contouring_impl(self, isolevel: ti.f32, bias: ti.f32):
+    def dual_contouring_impl(self, isolevel: ti.f32):
         for x, y, z in self.voxel.voxel_vertex_value:
             # Indexing into the (x, y, z) cube
             cube_index = 0
@@ -1488,6 +1510,14 @@ class SRTool:
         pc.points = o3d.utility.Vector3dVector(point_data)
         o3d.io.write_point_cloud(file_path, pc)
 
+    def export_particle_point_cloud(self, particle_pos: ti.template(), num_particles: ti.i32, file_path: str):
+        assert file_path[-3:] == "ply", "Output file must be in ply format!"
+        pc = o3d.geometry.PointCloud()
+        point_data = np.ndarray(shape=(num_particles, 3), dtype=np.float64)
+        core.taichi_tools.copy_vertex_field_to_array(particle_pos, point_data, num_particles)
+        pc.points = o3d.utility.Vector3dVector(point_data)
+        o3d.io.write_point_cloud(file_path, pc)
+
 
 
     def export_mesh(self, file_path: str, output_normal = False, output_velocity = False):
@@ -1528,5 +1558,7 @@ class SRTool:
 
 
         ply_exporter.export(file_path)
+
+
 
 
